@@ -57,17 +57,16 @@ This utility collects three main categories of metrics from Iceberg tables:
 ### Running the Utility
 
 ```python
-# Run metrics collection for all tables in the default catalog and database
-python iceberg_metrics.py
+  global WAREHOUSE
 
-# OR use the collector in your code
-from iceberg_metrics import collect_all_metrics, collect_metrics_for_table
+  WAREHOUSE =""
 
-# Collect metrics for all tables
-results = collect_all_metrics(catalog="MyCatalog", database="MyDatabase")
+  # # # Collect metrics for all tables
+  # results = collect_all_metrics(catalog="ManagedIcebergCatalog", database="s3tablescatalog")
+  # 
+  # # Collect metrics for a specific table
+  # table_metrics = collect_metrics_for_table("customers", catalog="ManagedIcebergCatalog", database="s3tablescatalog")
 
-# Collect metrics for a specific table
-table_metrics = collect_metrics_for_table("my_table", catalog="MyCatalog", database="MyDatabase")
 ```
 
 ### Output Examples
