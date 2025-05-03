@@ -52,44 +52,7 @@ This utility collects three main categories of metrics from Iceberg tables:
 | min_file_count | Minimum number of files in any partition | Count |
 | total_size_bytes | Total size of all partitions | Bytes |
 
-## Setup and Configuration
 
-### Required Configuration
-
-Before using this utility, you need to:
-
-1. **Set your Spark configuration**: Configure the Spark session with proper Iceberg support
-2. **Set your warehouse path**: Specify the S3 or local path where your Iceberg tables are stored
-
-```python
-# Example minimum configuration
-import os
-from iceberg_metrics import collect_all_metrics, collect_metrics_for_table
-
-# Set warehouse path - REQUIRED
-WAREHOUSE = "arn:aws:s3tables:us-east-1:YOUR_ACCOUNT_ID:bucket/YOUR_BUCKET"
-
-# Optional: Set Java home if needed for local development
-os.environ["JAVA_HOME"] = "/path/to/your/java"
-```
-
-### Spark Configuration
-
-The utility automatically sets up a Spark session with the following configuration:
-
-```python
-conf = {
-    "spark.app.name": "iceberg_metrics",
-    "spark.jars.packages": "com.amazonaws:aws-java-sdk-bundle:1.12.661,org.apache.hadoop:hadoop-aws:3.3.4,software.amazon.awssdk:bundle:2.29.38,com.github.ben-manes.caffeine:caffeine:3.1.8,org.apache.commons:commons-configuration2:2.11.0,software.amazon.s3tables:s3-tables-catalog-for-iceberg:0.1.3,org.apache.iceberg:iceberg-spark-runtime-3.4_2.12:1.6.1",
-    "spark.sql.extensions": "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
-    "spark.sql.catalog.ManagedIcebergCatalog": "org.apache.iceberg.spark.SparkCatalog",
-    "spark.sql.catalog.ManagedIcebergCatalog.catalog-impl": "software.amazon.s3tables.iceberg.S3TablesCatalog",
-    "spark.sql.catalog.ManagedIcebergCatalog.warehouse": WAREHOUSE,
-    "spark.sql.catalog.ManagedIcebergCatalog.client.region": "us-east-1",
-}
-```
-
-You can customize this configuration as needed for your environment.
 
 ## Usage
 
@@ -107,33 +70,27 @@ The utility provides two main methods:
 ```python
 # Set your warehouse path first
 if __name__ == "__main__":
-    global WAREHOUSE
-    WAREHOUSE = "arn:aws:s3tables:us-east-1:YOUR_ACCOUNT_ID:bucket/YOUR_BUCKET"
     
-    # Collect metrics for all tables
+    global WAREHOUSE, conf
+
+    WAREHOUSE = "arn:aws:s3tables:us-east-1:XXX:bucket/soumilshah-dev"
+    os.environ["JAVA_HOME"] = "/opt/homebrew/opt/openjdk@11"
+    conf = {
+        "spark.app.name": "iceberg_metrics",
+        "spark.jars.packages": "com.amazonaws:aws-java-sdk-bundle:1.12.661,org.apache.hadoop:hadoop-aws:3.3.4,software.amazon.awssdk:bundle:2.29.38,com.github.ben-manes.caffeine:caffeine:3.1.8,org.apache.commons:commons-configuration2:2.11.0,software.amazon.s3tables:s3-tables-catalog-for-iceberg:0.1.3,org.apache.iceberg:iceberg-spark-runtime-3.4_2.12:1.6.1",
+        "spark.sql.extensions": "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
+        "spark.sql.catalog.ManagedIcebergCatalog": "org.apache.iceberg.spark.SparkCatalog",
+        "spark.sql.catalog.ManagedIcebergCatalog.catalog-impl": "software.amazon.s3tables.iceberg.S3TablesCatalog",
+        "spark.sql.catalog.ManagedIcebergCatalog.warehouse": WAREHOUSE,
+        "spark.sql.catalog.ManagedIcebergCatalog.client.region": "us-east-1",
+    }
+
+    # # # Collect metrics for all tables
     results = collect_all_metrics(catalog="ManagedIcebergCatalog", database="s3tablescatalog")
-    
-    # OR collect metrics for a specific table
-    table_metrics = collect_metrics_for_table("customers", 
-                                             catalog="ManagedIcebergCatalog", 
-                                             database="s3tablescatalog")
-```
 
-**Option 2: Import in your code**
+    # # Collect metrics for a specific table
+    table_metrics = collect_metrics_for_table("customers", catalog="ManagedIcebergCatalog", database="s3tablescatalog")
 
-```python
-from iceberg_metrics import collect_all_metrics, collect_metrics_for_table
-
-# Set your warehouse path
-WAREHOUSE = "arn:aws:s3tables:us-east-1:YOUR_ACCOUNT_ID:bucket/YOUR_BUCKET"
-
-# Method 1: Collect metrics for all tables in a catalog and database
-results = collect_all_metrics(catalog="MyCatalog", database="MyDatabase")
-
-# Method 2: Collect metrics for a specific table
-table_metrics = collect_metrics_for_table("my_table", 
-                                         catalog="MyCatalog", 
-                                         database="MyDatabase")
 ```
 
 ### Output Examples
