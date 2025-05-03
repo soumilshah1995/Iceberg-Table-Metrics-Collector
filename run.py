@@ -15,7 +15,6 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-
 GLOBAL_METRICS = {}
 
 
@@ -23,25 +22,10 @@ def create_spark_session():
     """
     Create a Spark session with proper configuration for Iceberg tables
     """
-    conf = {
-        "spark.app.name": "iceberg_metrics",
-        "spark.jars.packages": "com.amazonaws:aws-java-sdk-bundle:1.12.661,org.apache.hadoop:hadoop-aws:3.3.4,software.amazon.awssdk:bundle:2.29.38,com.github.ben-manes.caffeine:caffeine:3.1.8,org.apache.commons:commons-configuration2:2.11.0,software.amazon.s3tables:s3-tables-catalog-for-iceberg:0.1.3,org.apache.iceberg:iceberg-spark-runtime-3.4_2.12:1.6.1",
-        "spark.sql.extensions": "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
-        "spark.sql.catalog.ManagedIcebergCatalog": "org.apache.iceberg.spark.SparkCatalog",
-        "spark.sql.catalog.ManagedIcebergCatalog.catalog-impl": "software.amazon.s3tables.iceberg.S3TablesCatalog",
-        "spark.sql.catalog.ManagedIcebergCatalog.warehouse": WAREHOUSE,
-        "spark.sql.catalog.ManagedIcebergCatalog.client.region": "us-east-1",
-    }
 
     builder = SparkSession.builder
     for key, value in conf.items():
         builder = builder.config(key, value)
-
-    # Set Java home if needed for local development
-    if os.environ.get("JAVA_HOME"):
-        os.environ["JAVA_HOME"] = os.environ.get("JAVA_HOME")
-    else:
-        os.environ["JAVA_HOME"] = "/opt/homebrew/opt/openjdk@11"
 
     return builder.getOrCreate()
 
@@ -382,14 +366,14 @@ def collect_table_metrics(spark, catalog, database, table_name):
         return None
 
 
-def collect_all_metrics(WAREHOUSE, catalog="ManagedIcebergCatalog", database="s3tablescatalog"):
+def collect_all_metrics(catalog="ManagedIcebergCatalog", database="s3tablescatalog"):
     """
     Collect metrics for all tables in a given catalog and database
     """
     logger.info(f"Starting metrics collection for {catalog}.{database}")
 
     # Create Spark session
-    spark = create_spark_session(WAREHOUSE)
+    spark = create_spark_session()
 
     # Show available schemas for reference
     logger.info("Available schemas:")
@@ -470,34 +454,23 @@ def collect_metrics_for_table(table_name, catalog="ManagedIcebergCatalog", datab
         return None
 
 
-if __name__ == "__main__":
-    WAREHOUSE =""
-    # When run directly, collect metrics for all tables
-    logger.info("Running in standalone mode")
-    results = collect_all_metrics(WAREHOUSE)
+# if __name__ == "__main__":
+#     global WAREHOUSE, conf
 
-    # Print summary of the global metrics dictionary
-    print("\n===== METRICS SUMMARY =====")
-    for table_name, table_metrics in GLOBAL_METRICS.items():
-        print(f"\nTable: {table_name}")
+#     WAREHOUSE = "arn:aws:s3tables:us-east-1:XX:bucket/XXXX-dev"
+#     os.environ["JAVA_HOME"] = "/opt/homebrew/opt/openjdk@11"
+#     conf = {
+#         "spark.app.name": "iceberg_metrics",
+#         "spark.jars.packages": "com.amazonaws:aws-java-sdk-bundle:1.12.661,org.apache.hadoop:hadoop-aws:3.3.4,software.amazon.awssdk:bundle:2.29.38,com.github.ben-manes.caffeine:caffeine:3.1.8,org.apache.commons:commons-configuration2:2.11.0,software.amazon.s3tables:s3-tables-catalog-for-iceberg:0.1.3,org.apache.iceberg:iceberg-spark-runtime-3.4_2.12:1.6.1",
+#         "spark.sql.extensions": "org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions",
+#         "spark.sql.catalog.ManagedIcebergCatalog": "org.apache.iceberg.spark.SparkCatalog",
+#         "spark.sql.catalog.ManagedIcebergCatalog.catalog-impl": "software.amazon.s3tables.iceberg.S3TablesCatalog",
+#         "spark.sql.catalog.ManagedIcebergCatalog.warehouse": WAREHOUSE,
+#         "spark.sql.catalog.ManagedIcebergCatalog.client.region": "us-east-1",
+#     }
 
-        # Print snapshot metrics if available
-        if "snapshot" in table_metrics:
-            snapshot_data = table_metrics["snapshot"]
-            print("  Snapshot metrics:")
-            for metric_name, data in snapshot_data["metrics"].items():
-                print(f"    {metric_name}: {data['value']} {data['unit']}")
+#     # # # Collect metrics for all tables
+#     results = collect_all_metrics(catalog="ManagedIcebergCatalog", database="s3tablescatalog")
 
-        # Print files metrics if available
-        if "files" in table_metrics:
-            files_data = table_metrics["files"]
-            print("  Files metrics:")
-            for metric_name, data in files_data["metrics"].items():
-                print(f"    {metric_name}: {data['value']} {data['unit']}")
-
-        # Print partitions metrics if available
-        if "partitions" in table_metrics:
-            partitions_data = table_metrics["partitions"]
-            print("  Partition metrics:")
-            for metric_name, data in partitions_data["metrics"].items():
-                print(f"    {metric_name}: {data['value']} {data['unit']}")
+#     # # Collect metrics for a specific table
+#     table_metrics = collect_metrics_for_table("customers", catalog="ManagedIcebergCatalog", database="s3tablescatalog")
