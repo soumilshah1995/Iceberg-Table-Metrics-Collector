@@ -65,7 +65,7 @@ The utility provides two main methods:
 
 ### Running the Utility
 
-**Option 1: As a standalone script**
+**Sample usage
 
 ```python
 # Set your warehouse path first
